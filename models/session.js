@@ -6,6 +6,7 @@ var Schema = mongoose.Schema;
 
 var _Schema = new mongoose.Schema({
 	token : String,
+	_user_id : { type : Schema.Types.ObjectId , ref : 'User'},
 	expire : {type : Date, default : Date.now},
 	closed_date : {type : Date}
 });

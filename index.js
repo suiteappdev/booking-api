@@ -6,7 +6,6 @@ var mongoose = require("mongoose");
 var bodyParser = require('body-parser');
 app.use(bodyParser.json({limit: "50mb"}));
 var cors = require('cors');
-var jwt = require('jsonwebtoken');
 var morgan = require('morgan');
 var cluster = require('cluster');
 var cores = require('os').cpus().length;  //numero de cpus

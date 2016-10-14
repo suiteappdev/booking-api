@@ -4,8 +4,12 @@ module.exports = function(app, apiRoutes){
     var path = require("path");
     var User = require('../models/user');
     var _batmanMailer = require(path.join(process.env.PWD , "helpers", "BatmanMailer", "index.js"));
+    var auth = require(path.join(process.env.PWD , "helpers", "authenticate", "authenticate.js"));
     var _compiler = require(path.join(process.env.PWD , "helpers", "mailer.js"));
     var crypto = require("crypto");
+    var jwt = require('jsonwebtoken');
+    var Session = require(path.join(process.env.PWD, "models", "session.js"));
+
 
     function register(req, res){
         var data = req.body;
@@ -100,7 +104,7 @@ module.exports = function(app, apiRoutes){
                       expiresIn: 43200 // 24 horas (suficientes para una jornada laboral)
                     });
 
-                  userHelper.createSession({token : token, user : user }, function(err, userToken){
+                  userHelper.createSession({token : token, _user_id : mongoose.Types.ObjectId(user._id) }, function(err, userToken){
                         res.status(200).json({token:token, user : user});
                   });  
             }else{
@@ -112,8 +116,7 @@ module.exports = function(app, apiRoutes){
     function changePassword(req, res){
          var data = {};
          var REQ = req.body || req.params;
-
-          User.findOne({ _id : mongoose.Types.ObjectId(req.params.user_id) }, function(err, rs){
+        User.findOne({ _id : mongoose.Types.ObjectId(req.params.user_id) }, function(err, rs){
               if(rs){
                     if(rs.password ==  require(process.env.PWD + "/helpers/crypto-util")(REQ.oldpwd)){
                         rs.password = require(process.env.PWD + "/helpers/crypto-util")(REQ.newpwd);
@@ -128,7 +131,7 @@ module.exports = function(app, apiRoutes){
               }else{
                   res.status(404).json({message : "user not found"})
               }
-          });            
+        });                      
     }
 
     function recover(req, res){
@@ -152,37 +155,35 @@ module.exports = function(app, apiRoutes){
     }
 
   function validateToken(req, res){
-    var REQ = req.body || req.params;
-    var token = req.param.token;
-    var user_id = req.params.user_id;
+        var REQ = req.body || req.params; 
+        
+        var token = req.params.token;
+        var user_id = req.params.user_id;
 
-    if (token) {
-        jwt.verify(token, app.get("secret"), function(err, decoded) {
-            var Session = require("./models/session");
-
-            if (err){
-                return res.status(401).json({ success: false, message: 'Failed to authenticate token.' }); 
-            }
-
-            Session.find({token : token}, function(err, rs){
-                if(!err){ 
-                        if(rs.length > 0){ 
-                          console.log(rs);
-                          req.decoded = decoded;    
-                          next();
-                       }
-                       else{
-                            res.status(401).json({ success : false, message : 'invalid token'});
-                       }
+        if (token) {
+            jwt.verify(token, app.get("secret"), function(err, decoded) {
+                if (err){
+                        return res.status(401).json({ success: false, message: 'Failed to authenticate token.' }); 
                 }
-            })  
-      });
-    }else{
-      return res.status(403).send({ 
-          success: false, 
-          message: 'No token provided.' 
-      });
-    }
+
+                Session.find({token : token, _user_id:mongoose.Types.ObjectId(req.params.user_id)}, function(err, rs){
+                    if(!err){ 
+                            if(rs.length > 0){ 
+                              req.decoded = decoded;    
+                              res.status(200).json(rs);
+                           }
+                           else{
+                                res.status(401).json({ success : false, message : 'invalid token'});
+                           }
+                    }
+                })  
+          });
+        }else{
+          return res.status(403).send({ 
+              success: false, 
+              message: 'No token provided.' 
+          });
+        }
   }
 
   function reset(req, res){
@@ -205,15 +206,23 @@ module.exports = function(app, apiRoutes){
       });      
   }
 
-  apiRoutes.get('/api/user', users);
-  apiRoutes.get('/api/user/:id', user);
-  apiRoutes.delete("/api/user/:id", remove);
+  function logout(req, res){
+      var REQ = req.body || req.params;
+      auth.destroySession(req.params.token, req.params.user_id, function(err, rs){
+        console.log("callback errr", err);
+        console.log("callback rs", rs);
+        if(!err){
+          res.status(200).json(rs);
+        }
+      });
+  }
 
   app.post("/register", register);
-  app.post('/change-password/:user_id', changePassword);
+  app.post('/change-password/:user_id', auth.tokenValidator , changePassword);
   app.post("/authenticate", authenticate);
+  app.get("/logout/:user_id/:token", auth.tokenValidator, logout);
   app.post("/validate-token/:user_id/:token", validateToken);
-  app.put("/update-user/:user_id", update);
+  app.post("/update-user/:user_id", auth.tokenValidator, update);
   
   return this;
 }
