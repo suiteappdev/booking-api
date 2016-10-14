@@ -4,17 +4,18 @@ var http = require('http').Server(app);
 var config = require("./config");
 var mongoose = require("mongoose");
 var bodyParser = require('body-parser');
-app.use(bodyParser.json({limit: "50mb"}));
 var cors = require('cors');
 var morgan = require('morgan');
 var cluster = require('cluster');
 var cores = require('os').cpus().length;  //numero de cpus
 
+app.use(bodyParser.json({limit: "50mb"}));
 app.use(cors());
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 app.use(morgan('dev'));
 app.set("secret", config.secret);
+
 process.env.PWD = process.cwd() || process.env.PWD;
 
 apiRoutes = express.Router();
@@ -23,9 +24,6 @@ apiRoutes.use(function(req, res, next) {
   next();
 });
 
-app.get('/home', function(req, res){
-    res.send("Home");
-});
 
 apiRoutes.use(function(req, res, next) {
     next();
@@ -41,16 +39,13 @@ apiRoutes.use(function (err, req, res, next) {
     console.log(err);
 });
 
-var io = require("socket.io")(http);
-var turns = io;
 
-io.on('connection', function(socket){
-
-});
 
 mongoose.connection.on('open', function(ref){
+    
     console.log('Conectado a Mongo');
-    require("./controllers/all")(app, apiRoutes, io); 
+    
+    require("./controllers/all")(app, apiRoutes); 
     app.use("/api", apiRoutes);
 
     http.listen(config.appPort, function(){

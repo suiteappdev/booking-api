@@ -1,4 +1,5 @@
 module.exports = function(app, apiRoutes){
+  
     var mongoose = require('mongoose');
     var userHelper = require('../models/userHelper');
     var path = require("path");
@@ -46,6 +47,7 @@ module.exports = function(app, apiRoutes){
        });   
     }
 
+/*
     function remove(req, res){
         userHelper.remove(req.params.id, function(err, user){
             if(!err){
@@ -56,6 +58,7 @@ module.exports = function(app, apiRoutes){
         })
     }
 
+ 
     function users(req, res){
         User.find({})
         .exec(function(err, users){
@@ -76,6 +79,7 @@ module.exports = function(app, apiRoutes){
         })
 
     }
+    */
 
     function authenticate(req, res){
             if (!req.body.username) {
@@ -100,6 +104,7 @@ module.exports = function(app, apiRoutes){
             if(user.auth(req.body.password)){
                   user.password = null;
                       var _user = {};
+                      
                       _user.username = user.username;
                       _user.last_name = user.last_name;
                       _user.time = new Date().getTime();
@@ -110,12 +115,14 @@ module.exports = function(app, apiRoutes){
 
                   userHelper.createSession({token : token  , _user_id : mongoose.Types.ObjectId(user._id) }, function(err, userToken){
                         res.status(200).json({token:token, user : user});
-                  });  
+                  }); 
+
             }else{
                   res.status(401).json({err: 'Usuario o clave incorrectos'});
             }
         });
     }
+
 
     function changePassword(req, res){
          var data = {};
@@ -138,6 +145,8 @@ module.exports = function(app, apiRoutes){
         });                      
     }
 
+    /*
+
     function recover(req, res){
         var REQ = req.body || req.params;
         User.findOne({ username : REQ.username}, function(err, rs){
@@ -157,6 +166,7 @@ module.exports = function(app, apiRoutes){
                   }                    
         }); 
     }
+*/
 
   function validateToken(req, res){
         var REQ = req.body || req.params; 
@@ -190,6 +200,7 @@ module.exports = function(app, apiRoutes){
         }
   }
 
+/*
   function reset(req, res){
       var REQ = req.body || req.params;
       
@@ -210,6 +221,8 @@ module.exports = function(app, apiRoutes){
       });      
   }
 
+  */
+
   function logout(req, res){
       var REQ = req.body || req.params;
       auth.destroySession(req.params.token, req.params.user_id, function(err, rs){
@@ -229,4 +242,5 @@ module.exports = function(app, apiRoutes){
   app.post("/update-user/:user_id", auth.tokenValidator, update);
   
   return this;
+
 }
