@@ -99,12 +99,16 @@ module.exports = function(app, apiRoutes){
 
             if(user.auth(req.body.password)){
                   user.password = null;
+                      var _user = {};
+                      _user.username = user.username;
+                      _user.last_name = user.last_name;
+                      _user.time = new Date().getTime();
 
-                  var token = jwt.sign(user, app.get('secret'), {
+                  var token = jwt.sign(_user, app.get('secret'), {
                       expiresIn: 43200 // 24 horas (suficientes para una jornada laboral)
                     });
 
-                  userHelper.createSession({token : token, _user_id : mongoose.Types.ObjectId(user._id) }, function(err, userToken){
+                  userHelper.createSession({token : token  , _user_id : mongoose.Types.ObjectId(user._id) }, function(err, userToken){
                         res.status(200).json({token:token, user : user});
                   });  
             }else{
