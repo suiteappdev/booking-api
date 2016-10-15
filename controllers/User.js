@@ -1,4 +1,5 @@
 module.exports = function(app, apiRoutes){
+   
     var mongoose = require('mongoose');
     var userHelper = require('../models/userHelper');
     var path = require("path");
@@ -9,6 +10,7 @@ module.exports = function(app, apiRoutes){
     var crypto = require("crypto");
     var jwt = require('jsonwebtoken');
     var Session = require(path.join(process.env.PWD, "models", "session.js"));
+    var apiResponder = require("../helpers/api-responder.js");
 
 
     function register(req, res){
@@ -16,18 +18,19 @@ module.exports = function(app, apiRoutes){
         var _plainPwd = req.body.password;
 
         if(!data.username || !data.password){
-          return res.status(500);
+          return res.status(500).json( apiResponder.error("REQUIRED_FIELDS_NO_RECEIVED") ) ;
         }
 
         userHelper.create(data, function(err, user){
+          
           if(err){
               console.log("erro", err);
-              res.status(409).json({err : err});
+              res.status(409).json( apiResponder.error(err) );
               return;
           }
 
           user.password = null;
-          res.status(200).json(user)
+          res.status(200).json( user );
         });
     }
 
@@ -44,7 +47,7 @@ module.exports = function(app, apiRoutes){
 
        userHelper.update({ _id : mongoose.Types.ObjectId(req.params.user_id) }, data, function(err, rs){
           if(rs){
-                res.status(200).json({sucess:true});
+                res.status(200).json( apiResponder.success() );
           }
        });   
     }
@@ -85,12 +88,12 @@ module.exports = function(app, apiRoutes){
 
     function authenticate(req, res){
             if (!req.body.username) {
-                res.status(400).send({err : 'debe especificar un usuario'});
+                res.status(400).send( apiResponder.error( "USER_NOT_RECEIVED" ) );
                 return;
             }
 
             if (!req.body.password) {
-                res.status(400).send({err : 'debe especificar un password'});
+                res.status(400).send( apiResponder.error( "PASSWORD_NOT_RECEIVED" ) );
                 return;
             }
 
@@ -98,8 +101,9 @@ module.exports = function(app, apiRoutes){
           var UserSchema = require('../models/user');
 
          UserSchema.findOne({username : req.body.username}).exec(function(err, user){
+          
             if(!user){
-                    res.status(401).json({err : 'Usuario o clave incorrectos'});
+                    res.status(401).json( apiResponder.error( "BAD_LOGIN" ) );
                     return;
              }
 
@@ -116,11 +120,11 @@ module.exports = function(app, apiRoutes){
                     });
 
                   userHelper.createSession({token : token  , _user_id : mongoose.Types.ObjectId(user._id) }, function(err, userToken){
-                        res.status(200).json({token:token, user : user});
+                        res.status(200).json( apiResponder.success( {token:token, user : user} )  );
                   }); 
 
             }else{
-                  res.status(401).json({err: 'Usuario o clave incorrectos'});
+                  res.status(401).json( apiResponder.error( "BAD_LOGIN" ) );
             }
         });
     }
@@ -131,7 +135,7 @@ module.exports = function(app, apiRoutes){
         var REQ = req.body || req.params;
 
         if(!REQ.old_password || !REQ.new_password){
-          return res.status(500).json({message:"Required fields not sent. Checkout the documentation."});
+          return res.status(500).json( apiResponder.error("REQUIRED_FIELDS_NO_RECEIVED") );
         }
 
         User.findOne({ _id : mongoose.Types.ObjectId(req.params.user_id) }, function(err, rs){
@@ -140,14 +144,14 @@ module.exports = function(app, apiRoutes){
                         rs.password = require(process.env.PWD + "/helpers/crypto-util")(REQ.new_password);
                         rs.save(function(err, rs){
                             if(rs){
-                                res.status(200).json({message : "ok"});
+                                res.status(200).json(apiResponder.success());
                             }
                         })
                     }else{
-                      res.status(400).json({message : "old password not match"})
+                      res.status(400).json( apiResponder.error( "OLD_PASSWORD_NOT_MATCH" ) )
                     }
               }else{
-                  res.status(404).json({message : "user not found"})
+                  res.status(404).json( apiResponder.error( "USER_NOT_FOUND" ) )
               }
         });                      
     }
@@ -184,26 +188,23 @@ module.exports = function(app, apiRoutes){
         if (token) {
             jwt.verify(token, app.get("secret"), function(err, decoded) {
                 if (err){
-                        return res.status(401).json({ success: false, message: 'Failed to authenticate token.' }); 
+                        return res.status(401).json( apiResponder.error("INVALID_TOKEN") ); 
                 }
 
                 Session.find({token : token, _user_id:mongoose.Types.ObjectId(req.params.user_id)}, function(err, rs){
                     if(!err){ 
                             if(rs.length > 0){ 
                               req.decoded = decoded;    
-                              res.status(200).json(rs);
+                              res.status(200).json( apiResponder.success() );
                            }
                            else{
-                                res.status(401).json({ success : false, message : 'invalid token'});
+                                res.status(401).json( apiResponder.error( "INVALID_TOKEN" ) );
                            }
                     }
                 })  
           });
         }else{
-          return res.status(403).send({ 
-              success: false, 
-              message: 'No token provided.' 
-          });
+          return res.status(403).send(apiResponder.error("NOT_TOKEN_PROVIDED"));
         }
   }
 
