@@ -1,5 +1,4 @@
 module.exports = function(app, apiRoutes){
-  
     var mongoose = require('mongoose');
     var userHelper = require('../models/userHelper');
     var path = require("path");
@@ -15,6 +14,10 @@ module.exports = function(app, apiRoutes){
     function register(req, res){
         var data = req.body;
         var _plainPwd = req.body.password;
+
+        if(!data.username || !data.password){
+          return res.status(500);
+        }
 
         userHelper.create(data, function(err, user){
           if(err){
@@ -34,7 +37,6 @@ module.exports = function(app, apiRoutes){
 
        !REQ.metadata || (data.metadata = REQ.metadata);
        !REQ.username || (data.username = REQ.username);
-       !REQ.email || (data.email = REQ.email);
        !REQ.first_name || (data.first_name = REQ.first_name);
        !REQ.last_name || (data.last_name = REQ.last_name);
        
@@ -42,7 +44,7 @@ module.exports = function(app, apiRoutes){
 
        userHelper.update({ _id : mongoose.Types.ObjectId(req.params.user_id) }, data, function(err, rs){
           if(rs){
-            res.json(rs);
+                res.status(200).json({sucess:true});
           }
        });   
     }
@@ -125,12 +127,17 @@ module.exports = function(app, apiRoutes){
 
 
     function changePassword(req, res){
-         var data = {};
-         var REQ = req.body || req.params;
+        var data = {};
+        var REQ = req.body || req.params;
+
+        if(!REQ.old_password || !REQ.new_password){
+          return res.status(500).json({message:"Required fields not sent. Checkout the documentation."});
+        }
+
         User.findOne({ _id : mongoose.Types.ObjectId(req.params.user_id) }, function(err, rs){
               if(rs){
-                    if(rs.password ==  require(process.env.PWD + "/helpers/crypto-util")(REQ.oldpwd)){
-                        rs.password = require(process.env.PWD + "/helpers/crypto-util")(REQ.newpwd);
+                    if(rs.password ==  require(process.env.PWD + "/helpers/crypto-util")(REQ.old_password)){
+                        rs.password = require(process.env.PWD + "/helpers/crypto-util")(REQ.new_password);
                         rs.save(function(err, rs){
                             if(rs){
                                 res.status(200).json({message : "ok"});
@@ -226,10 +233,8 @@ module.exports = function(app, apiRoutes){
   function logout(req, res){
       var REQ = req.body || req.params;
       auth.destroySession(req.params.token, req.params.user_id, function(err, rs){
-        console.log("callback errr", err);
-        console.log("callback rs", rs);
         if(!err){
-          res.status(200).json(rs);
+              res.status(200).json({message:true});
         }
       });
   }
