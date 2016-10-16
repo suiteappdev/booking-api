@@ -5,7 +5,6 @@ module.exports = function(app, apiRoutes){
     var path = require("path");
     var User = require('../models/user');
     var auth = require(path.join(process.env.PWD , "helpers", "authenticate", "authenticate.js"));
-    var _compiler = require(path.join(process.env.PWD , "helpers", "mailer.js"));
     var crypto = require("crypto");
     var jwt = require('jsonwebtoken');
     var Session = require(path.join(process.env.PWD, "models", "session.js"));
