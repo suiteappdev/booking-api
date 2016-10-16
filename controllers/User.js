@@ -4,7 +4,6 @@ module.exports = function(app, apiRoutes){
     var userHelper = require('../models/userHelper');
     var path = require("path");
     var User = require('../models/user');
-    var _batmanMailer = require(path.join(process.env.PWD , "helpers", "BatmanMailer", "index.js"));
     var auth = require(path.join(process.env.PWD , "helpers", "authenticate", "authenticate.js"));
     var _compiler = require(path.join(process.env.PWD , "helpers", "mailer.js"));
     var crypto = require("crypto");
