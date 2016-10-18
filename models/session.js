@@ -3,7 +3,6 @@ var timestamps = require('mongoose-timestamp');
 var Schema = mongoose.Schema;
 
 //puedes usar _Schema como standard, al final solo seteas el nombre del modelo session
-
 var _Schema = new mongoose.Schema({
 	token : String,
 	_user_id : { type : Schema.Types.ObjectId , ref : 'User'},

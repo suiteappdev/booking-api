@@ -10,7 +10,12 @@ module.exports = function(app, apiRoutes){
     var Session = require(path.join(process.env.PWD, "models", "session.js"));
     var apiResponder = require("../helpers/api-responder.js");
 
-
+    /**
+    * función registrar usuario
+    * @method register
+    * @param {req} obj - objeto request
+    * @param {res} obj - objeto response
+    */
     function register(req, res){
         var data = req.body;
         var _plainPwd = req.body.password;
@@ -32,6 +37,12 @@ module.exports = function(app, apiRoutes){
         });
     }
 
+    /**
+    * función actualizar usuario
+    * @method update
+    * @param {req} obj - objeto request
+    * @param {res} obj - objeto response
+    */
     function update(req, res){
        var data = {};
        var REQ = req.body || req.params;
@@ -84,6 +95,12 @@ module.exports = function(app, apiRoutes){
     }
     */
 
+    /**
+    * función para autenticación de usuario
+    * @method autheticate
+    * @param {req} obj - objeto request
+    * @param {res} obj - objeto response
+    */
     function authenticate(req, res){
             if (!req.body.username) {
                 res.status(400).send( apiResponder.error( "USER_NOT_RECEIVED" ) );
@@ -127,7 +144,12 @@ module.exports = function(app, apiRoutes){
         });
     }
 
-
+    /**
+    * función para cambio de contraseña
+    * @method changePassword
+    * @param {req} obj - objeto request
+    * @param {res} obj - objeto response
+    */
     function changePassword(req, res){
         var data = {};
         var REQ = req.body || req.params;
@@ -176,7 +198,12 @@ module.exports = function(app, apiRoutes){
         }); 
     }
 */
-
+  /**
+  * middleware para autenticacion del request
+  * @method validateToken
+  * @param {req} obj - objeto request
+  * @param {res} obj - objeto response
+  */
   function validateToken(req, res){
         var REQ = req.body || req.params; 
         
@@ -228,7 +255,12 @@ module.exports = function(app, apiRoutes){
   }
 
   */
-
+  /**
+  * funcion para destruir la sesion
+  * @method logout
+  * @param {req} obj - objeto request
+  * @param {res} obj - objeto response
+  */
   function logout(req, res){
       var REQ = req.body || req.params;
       auth.destroySession(req.params.token, req.params.user_id, function(err, rs){
